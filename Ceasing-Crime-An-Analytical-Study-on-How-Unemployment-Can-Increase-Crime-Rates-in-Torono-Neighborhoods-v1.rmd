@@ -1,6 +1,6 @@
 ---
 title: "Ceasing Crime: An Analytical Study on How Unemployment Can Increase Crime Rates in Torono Neighborhoods"
-author: "Hasan Mokaddes, 1005652045, Ahmed Mohamed Khed, 1000596802"
+author:  Ahmed Mohamed Khed
 date: "02/29/2020"
 output:
   word_document: default
