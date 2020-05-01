@@ -1,0 +1,336 @@
+---
+title: "Ceasing Crime: An Analytical Study on How Unemployment Can Increase Crime Rates in Torono Neighborhoods"
+author: "Hasan Mokaddes, 1005652045, Ahmed Mohamed Khed, 1000596802"
+date: "02/29/2020"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r include=FALSE}
+library(opendatatoronto)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(tinytex)
+library(corrplot)
+library(tidyr)
+library(evaluate)
+library(rvest)
+```
+
+```{r include=FALSE}
+packages <- list_packages(limit = 100)
+packages
+Packages_search <- search_packages("wellbeing-toronto-safety") # we looked for the packages with the count word
+Packages_search
+Packages_search$title              # Searched for the titles of the data with the count word
+Packages_search<- Packages_search %>%
+  filter(title == "Wellbeing Toronto - Safety")
+Packages_search                   # The king street Traffic Count was choosen
+list_package_resources(Packages_search)
+list_package_resources(Packages_search)$name  
+Data1 <- Packages_search %>% 
+  list_package_resources() %>% 
+  filter(name == "wellbeing-toronto-safety") %>%    # filter the file
+  get_resource()
+
+Data1
+
+```
+
+```{r}
+DATA1<- Data1$`RawData-Ref Period 2011`
+DATA1
+
+```
+
+```{r}
+DATA1=DATA1 %>% # Renaming the headers
+  rename(
+    Neighbourhood = ...1,
+    Neighbourhood_Id=...2,
+    Arsons=Safety,
+    Assaults = ...4,
+    Break_and_Enters = ...5,
+    Drug_Arrests	= ...6,
+    Fire_Medical_Calls = ...7,
+    Fire_Vehicle_Incidents=...8,
+    Fires_and_Fire_Alarms	=...9,
+    Hazardous_Incidents=...10,
+    Murders=...11,
+    Robberies=...12,
+    Sexual_Assaults=...13,
+    Thefts=...14,
+    Total_Major_Crime_Incidents = ...15,
+    Vehicle_Thefts = ...16
+    
+    
+    )
+```
+
+```{r include=FALSE}
+DATA1 = DATA1[-1,]
+DATA1
+
+```
+```{r include=FALSE}
+package <- show_package("9ef4b82b-bd63-4c6b-b87b-7bd04f2a2fd3")
+Packages_search<- package %>%
+  filter(title == "Wellbeing Toronto - Demographics: NHS Indicators")
+Packages_search  
+list_package_resources(Packages_search)
+list_package_resources(Packages_search)$name  
+Data2 <- Packages_search %>% 
+  list_package_resources() %>% 
+  filter(name == "demographics-nhs-indicators-2011") %>%    # filter the file
+  get_resource()
+
+Data2
+ncol(Data2)
+
+
+```
+```{r include=FALSE}
+Data2=Data2 %>% 
+  rename(
+    Neighbourhood_Id = 'Hood#'
+    )
+
+Data2 = Data2[-1,]
+DATA2<- Data2%>% select(Neighbourhood_Id,Unemployed)
+
+DATA2
+```
+```{r include=FALSE}
+DATA <- merge(DATA1, DATA2, by = "Neighbourhood_Id")
+DATA
+```
+```{r include=FALSE}
+library("ggExtra")
+library("ggplot2")
+library(e1071)
+library(lmtest)
+library(grid)
+library(dplyr)
+
+DATA$Total_Major_Crime_Incidents<- as.numeric(DATA$Total_Major_Crime_Incidents)
+DATA$Unemployed<- as.numeric(DATA$Unemployed)
+
+#choosing the top 10
+data<-  DATA[order(DATA$Total_Major_Crime_Incidents),][1:10,]
+  
+data
+#choosing the least 10
+data2<-DATA[order(-DATA$Total_Major_Crime_Incidents),][1:10,]
+data2
+
+DATA_analysis <- rbind(data, data2)
+
+#DATA_analysis
+
+
+# choose the 10 hoods with the most number of crimes 
+
+```
+Abstract
+
+A dataset from the City of Toronto Open Data Portal was used to investigate the relationship between the total number of unemployed individuals and the total number of crimes in Toronto neighborhoods. The aim was to prove that unemployment has a direct effect on the total number of crimes. Graphical analysis and linear
+regression models were used to illustrate the relationship. The results indicate that there is a strong significant relationship between unemployment and crime occurrence. The results can help the city of Torontotarget the neighborhoods with high unemployment rates to employ vulnerable individuals and what would lower the crime rates.
+
+Introduction
+
+Recent study found that a major contributing factor for crime is unemployment [1]. According to the justice
+department study conducted in 2018 50% of the crime, perpetrator cites the reason for them to commit the
+crime was due to unemployment [1]. Another research conducted by the John Howard Society for Ontario
+states that “the existence of quality and stability of employment appears to be powerful protective factor
+against criminal behavior” [2]. It was found that unemployment is the single most significant factor in crime in Canada [3]. Many neighborhoods in Toronto are labeled as unsafe and it is often not recommended to live in therefore, we were interested to analyze the crime data in neighborhoods obtained in 2011, the findings of this paper will help us prove that unemployment is directly correlated with crime in these neighborhoods. This came from a self-interest living in neighborhoods labeled as unsafe and dangerous due to its high crime rates. The findings will help the city to help the people of these neighborhoods and provide them with stable earnings for livelihood thereby reducing crimes. Although we are very much aware that crime is not only due to unemployment, it has other influencing factors such as education, income, family structure and age group, for the purpose of this study we only looked at unemployment. Our question is “Do neighborhoods with most unemployed individuals have a high number of crime incidents compared to neighborhoods with the least unemployed individual.” In this study, we assumed that unemployment is the only independent variable to measure the crime rate. Our findings suggest that there is a strong correlation between unemployment and crime.
+
+Analysis
+
+We analysed 140 Toronto neighborhoods in the dataset, based on the total number of major crimesand their corresponding unemployment number. Assuming that unemployment is an independent variable and is not affected by any other external factors, we formed the following hypothesis,(H0) = Unemployment is directly proportional to the number of crimes committed.
+
+As mentioned earlier, our research question is “Do neighborhoods with most unemployed individuals have a
+high number of crime incidents compared to neighborhoods with the least unemployed individual” we have
+decided to go with this question based on the dataset’s variables. For this research, two different datasets were used where one showed a breakdown of crimes committed in each neighborhood in 2011 and the total number of the major crimes committed and the other one contained information about the race, education and unemployment. For the purpose of this research, it was decided to investigate the effects of unemployment on the total crimes committed; as stated in the introduction we have decided to choose the unemployment because the dataset clearly states the total number, where an alternative variable would have been education but this was classified into various fields such as “no certificate or degree”, “college diploma”, “university degree”. Taking these into account, the best approach was to use unemployment.
+
+To analyse the data, the dataset was cleaned using R to make it more actionable so that it could be used to
+analyze how to best represent the data and see the potential point of improvement to give a more acceptable
+result, out of 48 fields in the dataset “demographics-nhs-indicators-2011” it was decided to keep the fields “total number of unemployed” and “neighborhood name” and in the dataset, “wellbeing-toronto-safety” it was decided that the fields, “neighborhood names” and “total number of major crimes committed”. We decided to only use the top 10 and least 10 crime-infested neighborhoods and their unemployment rate selected.
+
+To understand the data more, we have conducted a summary statistic. The minimum Total major crime incidents were 81 and a maximum of 1393 with a mean of 537.2. Where Total number of unemployment had a minimum of 215 and maximum of 3310 with a mean of 934.5. The data was further explained using scatterplot diagram in figure 1. This result was further supported by the high density verticle lines graph as it proved that when unemployment is low, the crime is significantly lower compared the then to the high unemployment number which leads to a higher crime rate. Finally, a linear regression test was conducted to see the significance of our research and infer our research question to whether we accept or fail to reject the hypothesis.
+
+Graphical Analysis
+
+Summary Analysis
+
+```{r}
+#Group the data by neighborhood
+#Volume_count <- DATA_analysis %>%
+ # group_by(Neighbourhood) %>%
+#summarise(Total_Major_Crime_Incidents,Unemployed)
+#Statistical summary
+#summary(Volume_count)
+
+Entire_Data <- DATA%>%
+  group_by(Neighbourhood) %>%
+summarise(Total_Major_Crime_Incidents,Unemployed)
+summary(Entire_Data)
+
+```
+To understand the data more, we have conducted a summary statistic. The minimum Total major crime incidents were 81 and a maximum of 1393 with a mean of 934.5. Where Total number of unemployment had a minimum of 215 and maximum of 3310 with a median of 795. The data was further explained using scatterplots figure 1. This result was further supported by the boxplot and scatterplot graphs as it proved that when unemployment is low, the crime is significantly lower compared the then to the high unemployment number which leads to a higher crime rate. Finally, a linear regression test was conducted to see the significance of our research and infer our research question to whether we accept or fail to reject the hypothesis.
+
+```{r eval=FALSE, include=FALSE}
+#Group the data by neighborhood
+Volume_count <- DATA_analysis %>%
+  group_by(Neighbourhood) %>%
+summarise(Total_Major_Crime_Incidents,Unemployed)
+
+#Statistical summary
+summary(Volume_count)
+
+#creating bar-plot representing total crime vs neighborhood
+
+ggplot(Volume_count, mapping = aes(x = (Neighbourhood), y = Total_Major_Crime_Incidents)) +
+geom_col(position = "dodge", alpha = 0.8)+ labs(y= "Appendix-1 Number of Total crime", x = "Neighbourhood")+
+
+  coord_flip()
+ 
+```
+```{r eval=FALSE, include=FALSE}
+#creating bar-plot representing unemployed individuals vs neighborhood
+
+ggplot(Volume_count, mapping = aes(x = (Neighbourhood), y = Unemployed)) +
+geom_col(position = "dodge", alpha = 0.8)+ labs(y= "Figure-1 Number of Unemployed individuals", x = "Neighbourhood")+
+  coord_flip()
+
+```
+
+```{r}
+library(ggplot2)
+
+attach(Entire_Data)
+plot(Total_Major_Crime_Incidents, Unemployed, main="Unemployment vs Total crimes",
+   xlab="Figure-1 Total crime number ", ylab="Unemployed values ", pch=19, col= Entire_Data$Neighbourhood)
+
+```
+In figure 1, the graph scatterplot gives a more visual meaning and further intensifies the claim that there is, in fact, a relation between unemployment and crime incidents. The pattern on clustering in the figure shows that lower the unemployment numbers, lower is the total number of crimes (as shown in the bottom left-hand corner) and it also shows that there is a significant rise in crime as and the number of unemployment increases (as shown in the right-hand corner of the graph).
+```{r}
+# high density vertical lines.
+
+ plot(Entire_Data$Total_Major_Crime_Incidents,Entire_Data$Unemployed, type= "h",xlab   = "Figure-2 Total Major Crime Incidents",     ylab   = "Crime Vs unemployment",  main   = "Crime Vs unemployment", pch    = 5, col=Entire_Data$Neighbourhood)
+
+
+
+ 
+
+```
+In figure-2, in the high density diagram, it is clearly showing that there is a marked difference between the unemployment number and their corresponding crime rate. The bottom graph shows the selected neighborhoods and their crosshanded unemployment. Here the figure demonstrates that while some neighborhood has high crime rates, they have average unemployed numbers while other that has lower crime rates have higher unemployment numbers. Therefore, it is understandable that there is some form of a relationship between the crime and the unemployment numbers. However, to prove the research question of the unemployment rate affecting crime, further evidence and analysis are needed.
+```{r}
+#Linear Regression model
+model <- lm(Total_Major_Crime_Incidents ~ Unemployed , data = Entire_Data)
+
+summary(model)
+
+bptest(model)
+
+
+Entire_Data$Neighbourhood= as.numeric(as.factor(Entire_Data$Neighbourhood))
+
+cor(Entire_Data)
+
+
+#Linear Regression Line 
+
+plot(Entire_Data$Unemployed, Entire_Data$Total_Major_Crime_Incidents,            # plot the variables 
+     main= "Linear Regression Model",
+     xlab="Figure-3 Number of Unemployed Incidents",        # x−axis label 
+     ylab=" Total Major Crime Incidents")    
+abline(model)
+
+
+
+
+
+
+```
+Regression model:
+
+In figure-3 and linear regression statistical summary, a linear regression model was used to quantify the relationship between the total number of major crimes in neighborhoods used as the dependent variable and
+the number of unemployed individuals as the independent variable. We wanted to see if the relationship occurs and use the regression equation to estimate the coefficient for the unemployed individuals that correspond to the difference in the total number of major crimes in neighborhoods.
+
+The model produced a coefficient estimate of 0.4516, the positive sign of the coefficient indicates that as the value of unemployed individuals increases the mean of the total number of major crimes also increases. The coefficient value signifies how much the mean of a total number of major crimes changes given a unit change of the number of unemployed individuals. In other words, if the number of unemployed individuals changes by one unit the number of total major crimes increases by 0.4516. We can use this value of unemployment to make predictions about the value of the total number of crimes in the neighborhoods [4].
+
+The regression model produces a p-value of 0.0000000000000002, the p-value is less than .05 which is evidence for us to reject the null hypothesis. After obtaining the regression equation we generated the line of best “figure-4” fit the observations, this line can help us identify outliers and understand the unexplained variation[4]. The regression line on the graph displays the same findings when the number of unemployed individuals increased by 1 the total number of major crimes increases by 0.4516[4]. The 0.4516 R squared value also tells us the strength of the relationship between the variables and in our case the model explains 55% of the variation in the total number of major crimes and this can be observed in the regression plot. Overall, this shows that there is a relationship between unemployment and the total number of major crimes in the neighborhood and confirms our hypothesis[4]. 
+
+Furthermore, to confirm the findings conducted a studentized Breusch-Pagan test and correlation matrix. The Breusch-Pagan test created a chi-squared distribution which is 14.558 The p-value of the chi-squared test is 0.0001359 which is less than 0.05 and the null hypothesis is rejected and in this case, the relationship is homoskedasticity. Furthermore, the correlation matrix shows that there is a 0.6720101 correlation coefficient between unemployment and the number of major crimes. This indicates there is a strong correlation and further confirms our findings.
+
+Limitations and weaknesses:
+
+The weakness of analysis
+We tried to find the relationship between unemployment and the total number of major crimes in this research but using only unemployment as the main independent variable can be a bit biased. Using multiple independent variables such as education can make it easier to analyze the effects of unemployment as see if it is the main variable that causes the number of crimes to go higher in neighborhoods[5]. Using linear regression could case multiple limitations, the assumption of linearity between the dependent and independent variables can be an issue. It assumes that there is a straight-line relationship between the variables used in the model and this can be wrong sometimes. We have some outliers in our data and linear regression is very sensitive to these outliers, removing these outliers could be a good approach to fix this issue. In some cases, it oversimplifies the relationship between variables, us conducting multiple tests helped us overcome these limitations to have a better understanding of the relationship[5].
+
+Ethical Issues:
+
+The datasets are very informative and helped in answering the research question and analyze the content.
+However, as we highlight the crime-infested neighborhoods, it would be unethical to point pin and for a notion that the selected neighborhoods are the worst in the society as crime could occur anywhere. Although our research deals to neighborhoods, anonymizing them would have been a better approach but to understand the city health, we felt it was the best approach to use the neighborhood name so we would then help present it to the authorities to show them what is the key point that they should boos their energy in. As the dataset does not state the number of residents in the neighborhood, it might provide a false image of the neighborhood in relation to the crime incidents.
+
+Although the research question was valid, it should have been more detailed in explaining or narrowing down the scope. One of the major limitations of this dataset was it was constrained the generic unemployment not taking into account the underlying causes, for example, education and skills level, new immigrants or senior citizens. The dataset does not state the total number of residents in the neighborhood which might have help in further analyzing the ratio of crime and the population.
+
+Future Work:
+
+Although this study not only proves a link between unemployment and crime, it clearly states that the overall unemployment rate affects the crime rate. However, we must remember other underlying causes of
+unemployment must also be considered as they have a profound impact on unemployment ability. Some of them could be previous criminal records, lows skills, low education level. A further study in this aspect must be conducted to confirm the hypothesis and present it to the appropriate authorities to help them tackle the problem and find a suitable solution.
+
+Self Criticism:
+
+Looking at the research objectively, one can very well argue that this needs more study and this does not suffice to conclude that the effects are significant, however, given the constraints our ability with R we tried to create awareness and create a form of conversation of what is one of the major causes of crime and how it would be visualized and tackled. As stated in the section above future work is necessary in this regard however we were able to accept our hypothesis that the unemployment number affects the crime committed.
+
+Reference
+
+1. Department of Justice. (2019, May 30). State of the Criminal Justice System - 2019 Report. Retrieved from
+https://www.justice.gc.ca/eng/cj-jp/state-etat/2019rpt-rap2019/
+2. John Howard Society for Ontario. (2009, June 18). CRIME and UNEMPLOYMENT: What’s the link?
+Retrieved from https://johnhoward.on.ca/wp-content/uploads/2014/09/
+3. Janko, Zuzana & Popli, Gurleen. (2015). Examining the Link between Crime and Unemployment: A Time
+Series Analysis for Canada. Applied Economics. 47. 1-13. 10.1080/00036846.2015.1023942.
+4. How to Interpret P-values and Coefficients in Regression Analysis. (2019, March 15). Statistics By Jim.
+https://statisticsbyjim.com/regression/interpret-coefficients-p-values-regression/
+5. Advantages and Disadvantages of Linear Regression in Machine Learning. (2019, May 9). The
+Professionals Point. https://theprofessionalspoint.blogspot.com/2019/05/advantages-anddisadvantages-of-linear.html
+Libraries
+1. Sharla Gelfand (2019). opendatatoronto: Access the City of Toronto Open Data Portal. R package version
+0.1.1. https://CRAN.R-project.org/package=opendatatoronto
+2. Hadley Wickham, Romain François, Lionel Henry and Kirill Müller (2019). dplyr: A Grammar of Data
+Manipulation. R package version 0.8.3. https://CRAN.R-project.org/package=dplyr
+3. H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016.
+4. Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686,
+https://doi.org/10.21105/joss.01686
+5. Taiyun Wei and Viliam Simko (2017). R package “corrplot”: Visualization of a Correlation Matrix (Version
+0.84). Available from https://github.com/taiyun/corrplot
+6. Hadley Wickham and Lionel Henry (2019). tidyr: Tidy Messy Data. R package version 1.0.0. https://CRAN.Rproject.org/package=tidyr
+7. R Core Team (2019). R: A language and environment for statistical computing. R Foundation for Statistical
+Computing, Vienna, Austria. URL https://www.R-project.org/.
+
+```{r}
+
+#creating bar-plot representing total crime vs neighborhood
+
+ggplot(Volume_count, mapping = aes(x = (Neighbourhood), y = Total_Major_Crime_Incidents)) +
+geom_col(position = "dodge", alpha = 0.8)+ labs(y= "Figure-1 Number of Total crime", x = "Neighbourhood")+
+
+  coord_flip()
+
+#creating bar-plot representing unemployed individuals vs neighborhood
+
+ggplot(Volume_count, mapping = aes(x = (Neighbourhood), y = Unemployed)) +
+geom_col(position = "dodge", alpha = 0.8)+ labs(y= "Figure-1 Number of Unemployed individuals", x = "Neighbourhood")+
+  coord_flip()
+ 
+```
+In appendix-1, the bar plots give an overall understanding of the dataset. Although there were 140
+neighborhoods, in the figure above the 10 most crime infested neighborhoods and the least10 are shown,
+these 10 neighborhoods were selected to give a more meaningful insight as 140 neighborhoods were difficult
+to present or read. This solidifies the hypothesis and puts the doubt at rest as the contrast of their numbers are different by a huge ratio. 
