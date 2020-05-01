@@ -1,6 +1,6 @@
 ---
 title: "XXX"
-author: "Hasan Mokaddes, Ahmed Mohamed Khed"
+author: "Ahmed Mohamed Khed"
 date: "05/02/2020"
 output:
   word_document: default
