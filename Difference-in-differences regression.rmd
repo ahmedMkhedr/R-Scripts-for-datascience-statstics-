@@ -1,0 +1,98 @@
+---
+title: "Probelmst5"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(tidyverse)
+library(dplyr)
+library(lubridate) # date and time package
+library(ggplot2)
+library(rlang)
+library(tidyr)
+library(broom)
+library(AER)
+library(corrplot)
+library(RColorBrewer)
+
+DATA <- read.csv('Data_Health.csv')
+DATA
+
+
+
+DATA<- DATA %>%
+  select(logmedexpense, healthinsu, illnesses,age,logincome,ssiratio)
+
+DATA
+ 
+summary(DATA) 
+
+cor(DATA)
+```
+```{r}
+# Defining variables (logmedexpense dependent variable, healthinsu endogenous variable)
+# ((illnesses+age+logincome) exogenous variables, ssiratio instruments)
+#Ols model
+model1ols <- lm(logmedexpense ~ healthinsu + illnesses+age+logincome,data=DATA)
+summary(model1ols)
+
+```
+
+```{r}
+# 2SLS model
+
+model2sls <- ivreg(logmedexpense ~ healthinsu + illnesses+age+logincome | illnesses+age+logincome + ssiratio,data=DATA)
+summary(model2sls)
+
+```
+
+```{r}
+# Hausman test for endogeneity of regressors
+cfdiffrance <- coef(model2sls) - coef(model1ols)
+vcdiffrence <- vcov(model2sls) - vcov(model1ols)
+diffrance <- as.vector(t(cfdiffrance) %*% solve(vcdiffrence) %*% cfdiffrance)
+pchisq(diffrance, df = 2, lower.tail = FALSE)
+
+```
+```{r}
+
+
+
+# Plotted data
+
+#health incurance vs medical expense  
+
+ggplot(DATA) +
+  geom_point(aes(healthinsu,logmedexpense)) +
+  geom_point(data = DATA, aes(healthinsu,logmedexpense ), colour = 'red', size = 3)+ggtitle("Health insurance vs Medical expense")
+
+
+##ilnesse stage vs medical expense  
+
+
+ggplot(DATA) +
+  geom_point(aes(illnesses ,logmedexpense)) +
+  geom_point(data = DATA, aes(illnesses ,logmedexpense ), colour = 'red', size = 3)+ggtitle("Illnesse stage vs Medical expense")
+##age vs medical expense  
+
+
+ggplot(DATA) +
+  geom_point(aes(age,logmedexpense)) +
+  geom_point(data = DATA, aes(age,logmedexpense ), colour = 'red', size = 3)+ggtitle("Age vs Medical expense")
+
+
+
+```
+
+
+
