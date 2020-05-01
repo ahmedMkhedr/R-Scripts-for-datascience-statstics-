@@ -1,0 +1,229 @@
+---
+Title:"Finding Correlration between Critical Patient Transportation and Season of the Year"
+Author:"Ahmed Mohamed Khed Student ID-1000596802", " Hassan Mokaddes Student ID- 1005652045"
+date: "7/02/2020"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r include=FALSE}
+#Installing packages
+install.packages("tidyverse")     
+install.packages("dslabs") 
+install.packages("opendatatoronto")
+install.packages("evaluate")
+```
+```{r include=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(opendatatoronto)
+library(evaluate)
+```
+```{r include=FALSE}
+#Searching the package
+packages <- list_packages(limit = 100)
+packages
+Packages_search <- search_packages("Specialized Patient Transports by Paramedics") # we looked for the packages with the count word
+Packages_search
+Packages_search$title              # Searched for the titles of the data with the count word
+Packages_search<- Packages_search %>%
+  filter(title == "Specialized Patient Transports by Paramedics")
+Packages_search                   # The king street Traffic Count was choosen
+list_package_resources(Packages_search)
+list_package_resources(Packages_search)$name     # The file names were obtained 
+```
+
+```{r include=FALSE}
+
+
+# Filtering the package for 2015 traffic count Summary one 
+MEDICAL_DATA <- Packages_search %>% 
+  list_package_resources() %>% 
+  filter(name == "specialized-patient-transports-data-2015-2019") %>%    # filter the file
+  get_resource()
+
+MEDICAL_DATA
+
+
+```
+
+```{r include=FALSE}
+MEDICAL_DATA1<- MEDICAL_DATA$`STEMI Bypass Transports`
+MEDICAL_DATA2<- MEDICAL_DATA$`Stroke Bypass Transports`
+MEDICAL_DATA3<- MEDICAL_DATA$`Trauma Centre Transports`
+
+
+Medicaldata<- rbind(MEDICAL_DATA1,MEDICAL_DATA2,MEDICAL_DATA3)
+
+names(Medicaldata)[1]<- "Specialized_Transport_Type"
+Medicaldata$Count <-as.numeric(as.character(Medicaldata$Count))
+
+
+
+str(Medicaldata)
+Medicaldata
+
+
+
+```
+Abstract 
+
+We used a dataset from the City of Toronto Open Data Portal using the R package opendatatoronto. Using bar plot and Stacked Bar Plot we find that while there is a high rate a cardiovascular disease, it is not always the case for critical patient transportation. Although our findings did not find a conclusive relation between seasons (Months) and the transportation type count, it did however shed light on the different type of transportation required throughout the year for each type of critical patient. To investigate this furthermore, we used linear regression model and performing correlation analysis. It confirmed our previous findings and there is no relationship between the seasons and the type of specialized patient transportation. 
+
+Introduction
+
+The risk on cardiovascular disease has been increasing at a exponential rate in North America. According to the Government of Canada’s statistics death caused from cardio-vascular disease is the 2nd leading cause of death in Canada. According to Public Health Agency of Canada's Canadian Chronic Disease Surveillance System  (CCDSS), Canadian adults ages 20 and above that are diagnosed with cardiovascular diseases are 2.4 million or about 1 in 12 and about 12 Canadians die because of heart related complication in ever hour. In addition to this a astounding number of Canadians adults aged 40 and above are living with heart failure, their approximate number is 669,600 or 3.6%. [1]
+In this research, as we wanted to explore type of cardiovascular disease, how patients were transported, and the count of the cases transported per month from 2015-2019. We asked ourselves a simple question, “Does certain months of a year have any effect on the count of patients suffering from a different cardiovascular disease that require a specialized transportation?”. Our research is based on assumption that cardiovascular patients would have higher critical transportation needed than any other type of patients. 
+
+Our hypothesis for this research is that there is a correlation between seasons (Months) of a year and the type of transportation needed to transport critical patients presumably suffering from heart diseases.
+```{r}
+#Plotting Graph volume of traffic by intersections 
+# options(repos = c(CRAN = "http://cran.rstudio.com"))
+ #   install.packages("ggExtra")
+library("ggExtra")
+library("ggplot2")
+library(e1071)
+library(lmtest)
+
+
+
+Volume_count <- Medicaldata %>%
+  group_by(Specialized_Transport_Type) %>%
+summarise(Count=sum(Count))
+
+
+Volume_count1 <- Medicaldata %>%
+  group_by(Month,Specialized_Transport_Type) %>% 
+summarise(Count=sum(Count))
+
+#ggplot(Volume_count, aes(x = Specialized_Transport_Type, y = Count)) +            # The bar graph was obtained
+ # geom_col() + 
+ #labs(title = "type vs count", 
+  #     x = "Specialized_Transport_Type", 
+   #  y = "count")
+
+#########
+#ggplot(Medicaldata, aes(reorder(Specialized_Transport_Type, Count), Count)) +
+ #   geom_point() +
+  #  theme(axis.text.x = element_text(angle=45, hjust=1, vjust = 1))
+
+```
+Results
+``` {r}
+  x = Volume_count$Specialized_Transport_Type
+  y = Volume_count$Count
+  
+  barplot(y, names.arg = x, main="Count vs Specialized Transport Type",
+     xlab="Figure-1 Specialized Transport Type" , col=c("darkblue","red","yellow"), ylab = "Count")
+```
+Simple Bar Plot
+
+In the first graph in Figure 1 of the Bar plot graph is shows that although patient suffering from stroke has the highest number of specialised transportation needed, it is not only patients of cardiovascular diseases that required high number of transport, trauma patients require a high number of specialized transport too. In fact it is noted that people suffering from STEMI (cardiac arrest) has a lower transportation type needed compared to trauma patient. So our assumptions were partially correct as stroke (bypass) patient needs the highest number of specialized transportation, trauma patient also required high number of transportation as well. On the other hand, it is interesting to note that cardiac arrest (STEMI) patients required fewer counts of specialized transportation as compared to other. 
+
+``` {r}
+ggplot(Volume_count1, mapping = aes(x = reorder(Month, -Count,), y = Count)) +
+  geom_col(position = "dodge", alpha = 0.8)+ geom_point(aes(col= Specialized_Transport_Type), size = 4)+ labs(y= "Figure-2 Count", x = "Specialized Transportation Type")+
+  coord_flip()
+
+``` 
+Stacked bar plot
+
+In this graph figure 2 it is observed that STEMI patient transportation is constant through out the year irrespective of seasons or months which states that STEMI patient is an independent variable and is not affected by any of the months or seasons. On average each month about 300 to 400 vehicles are needed to transport STEMI patients. However, more than double the of the specialized vehicle is required for transporting trauma patients or victims during the same month each year. June, July and August had the highest counts of transportation needed for Trauma patients compared to the other months, which make us think that these months resulted in the high number of transportation needed. However, Stroke Show an increase in the counts of transportation needed than Trauma in the Months of December, January, February and march 
+``` {r}
+  
+############
+##boxplot(Count ~ Month, data= Volume_count1,
+        ##xlab   = "Specialized Transport Type",
+        ##ylab   = "Count",
+        ##main   = "Type vs count",
+        ##pch    = 5,
+        ##cex    = 2,
+        ##col    = c("red","green","orange"),
+        ##border = "dodgerblue")
+  
+#########################
+
+
+theme_set(theme_bw())  # pre-set the bw theme.
+
+g <- ggplot(Volume_count1, aes(Month, Count))
+
+# Scatterplot
+#g + geom_point() + 
+ # geom_smooth(method="lm", se=F) +
+  #labs(subtitle="Month vs count", 
+     #  y="Count", 
+     #  x="Month", 
+     #  title="Month vs count", 
+     #  caption="Toronto data")+ geom_point(aes(col= Specialized_Transport_Type), size = 4)
+
+
+# fix x access
+
+#####################
+
+theme_set(theme_classic())
+
+# Histogram on a Continuous (Numeric) Variable
+#g <- ggplot(Medicaldata, aes(Count)) + scale_fill_brewer(palette = "Spectral")
+
+#g + geom_histogram(aes(fill=Specialized_Transport_Type), 
+                   #binwidth = .1, 
+                   #col="black", 
+                   #size=.1) +  # change binwidth
+  #labs(title="Number of Counts", 
+       #subtitle="Frequancy of counts")  
+
+########################
+
+
+Medicaldata$Specialized_Transport_Type <-  as.numeric(as.factor(Medicaldata$Specialized_Transport_Type))
+Medicaldata$Month <-  as.numeric(as.factor(Medicaldata$Month))
+
+
+#plot(Count ~ Count+Year, data = Medicaldata, col = "grey", pch = 20,  main = "Data from Model 1")
+model <- lm(Specialized_Transport_Type ~ Count+Year+Month , data = Medicaldata)
+
+summary(model)
+
+#abline(h = 100, col = "darkorange", lwd = 2)
+bptest(model)  #p >0.05, H0 not rejected, constant variance
+#hist(resid(model),
+     #xlab   = "Residuals",
+     #main   = "Histogram of Residuals, Counts",
+     #col    = "darkorange",
+     #border = "dodgerblue",
+     #breaks = 20)
+
+#################
+
+#qqnorm(resid(model), main = "Normal Q-Q Plot, fit_1", col = "darkgrey")
+#qqline(resid(model), col = "dodgerblue", lwd = 2)
+
+########### 
+
+
+cor(Medicaldata)
+#pairs(Medicaldata)
+
+##############
+
+
+```
+Analytic Test
+Theses readings in figure-3 validates the finding in terms by statistical representation. We can observe that count of transportation type is significant and the year but not the month. However, it should be noted that the  R squared model is 0.4306. We have also created a correlation matrix, it was found that count and the Month has a correlation coefficient of 0.09121419 and the count and the Type of specialized transportation had a coefficient of 0.5662724. We have performed studentized Breusch-Pagan test and we got a p value of 0.3438
+
+Discussion 
+
+Looking at the figure 2 is looks like there is a relationship between the month and the total counts of specialized transportation needed for each patients. It seemed like Stroke numbers increase compared to Trauma and STEMI from December to April and Trauma increased from July to August to confirm this relationship we conducted multiple tests. From the linear regression it is noted that the R squared model is 0.4306 which is below 0.5 which shows that the model is not too accurate but with the multiple variable that should be takin into consideration, it should be improved more. In the coefficient matrix show no correlation between the Month and the count of transportations. A p-Value > 0.05 from the studentized Breusch-Pagan test indicates that the null hypothesis(the variance is unchanging in the residual) can be rejected and therefore heteroscedasticity exists.
+
+Although this research finding does not prove the hypothesis, it shows that there are a lot of specialized transportation required though out the year to transport people suffering from stroke, STEMI and trauma. Further study could help us delve deeper into what are the causes of the trauma and segment the disease into separate category to understand the effect of specialized transportation. 
+
+References:
+
+1.	(Report from the Canadian Chronic Disease Surveillance System: Heart Disease in Canada, 2018, updated on December 9, 2019, https://www.canada.ca/en/public-health/) 
+
