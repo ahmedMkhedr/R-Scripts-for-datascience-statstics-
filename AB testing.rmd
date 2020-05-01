@@ -1,0 +1,202 @@
+---
+title: "XXX"
+author: "Hasan Mokaddes, Ahmed Mohamed Khed"
+date: "05/02/2020"
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r}
+#install.packages("broom")
+
+library(tidyverse)
+library(dplyr)
+library(lubridate) # date and time package
+library(ggplot2)
+library(rlang)
+library(tidyr)
+library(broom)
+
+
+Data<- read.csv("cookie_cats.csv")
+
+Data = Data[,!(names(Data) %in% c("retention_1"))]
+
+
+
+#summary statstsics 
+
+summary(Data)
+
+
+
+# wanted to make sure all ID are unique
+
+
+unique_id <- unique(Data$userid)
+length(unique_id)
+
+#Table1
+
+
+# created conrrol and treatment Groups gate 40 in treatment and gate 30 is control 
+
+group<- ifelse(Data$version == "gate_40", "Treatment", "Control")
+
+# added it to the datafram 
+Assigning_data <- cbind.data.frame(unique_id, group)
+
+Data<- cbind.data.frame(Assigning_data,Data)
+
+Data <- Data[c("group","unique_id","version","sum_gamerounds","retention_7")]
+Data
+
+
+# wanted to see if there is any mismatc between group and version and there was none 
+
+Missmatch_treatment <- Data %>% filter( group == "treatment" & version == "gate_40")
+Missmatch_control <- Data %>% filter( group == "control" & version == "gate_30")
+Mismatch_all <- rbind(Missmatch_treatment,Missmatch_control)
+dim(Mismatch_all)
+Mismatch_all
+
+
+# created this to get the toal number of rounds played by each user to see if there is diffrence between the versions
+
+Data_summary <- Data %>%
+  group_by(group,version) %>%
+summarise(Total_logins=sum(sum_gamerounds))
+
+
+# BOX PLOT TO UNDERSTAND THE DATA
+
+boxplot(Data$sum_gamerounds,data=Data, main="Number of round played disstrubution",
+   xlab="players", ylab="Number of rounds played")
+
+
+# see the pLAYERS VS TOTAL GAME PLAYED
+
+PRINCTILE <- Data %>% group_by(sum_gamerounds) %>% summarize(count=n()) 
+PRINCTILE
+
+
+
+# the plot to see the diffrence between the two groups in terms of rounds played. 
+
+ggplot(Data_summary, aes(x = group, y = Total_logins,fill=version)) +            # The bar graph was obtained
+  geom_col() + 
+ labs(title = "Game version vs Total game rounds", 
+     x = "Study Groups", 
+     y = "Total game round")+  geom_bar(stat="identity")
+
+
+
+
+
+
+# In here I wnated to filter 2 groups based on false and true and see if there is any diffrence 
+
+False_return <- Data %>% filter( group == "Treatment" & retention_7 == "FALSE")
+False_return2 <- Data %>% filter( group == "Control" & retention_7 == "FALSE")
+False_return_return_all<- rbind(False_return,False_return2)
+dim(False_return_return_all)
+False_return_return_all
+
+True_return <- nrow(Data %>% 
+                          filter( group == "Control" & retention_7 == "TRUE"))
+True_return2 <-  nrow(Data %>% 
+                           filter( group == "Treatment" & retention_7 == "TRUE")) 
+
+
+Data_merge = data.frame("Group" = c("Control","Treatment"), "TRUE" = c(True_return,True_return2), "FALSE" = c(nrow(False_return), nrow(False_return2)), stringsAsFactors = FALSE)
+
+Data_merge2 <- Data_merge %>% 
+    gather("TRUE.", "FALSE.", key = "TRUEORFALSE", value = "Number")
+
+# merged verything to get this sexy table that summerized the diffrence between the 2 groups and the outcome and then sketched it 
+Data_merge2
+
+
+
+# sexy plot to see the diffrence between control and treatment 
+
+ggplot(data=Data_merge2, aes(x=Data_merge2$Group, y=Data_merge2$Number, fill=TRUEORFALSE)) +
+  geom_bar(stat="identity", position=position_dodge2(reverse = TRUE), width = 0.6) +
+  scale_fill_manual(values=c('#aecfe4','#425b84')) +
+  geom_text(aes(label=Data_merge2$Number), vjust=-0.1, color="dark grey",
+            position=position_dodge2(0.6, reverse = TRUE), size=3.5) +
+  labs(title="True vs False", 
+       x="Group", y = "Count") +
+  theme(legend.position="top") +  
+  theme_grey()
+
+
+
+# Rate of change 
+
+# wanted to see the rate of change for true between each so what the the likley it will be true between the 2 verions 
+
+
+True_num_all <- Data %>% filter(retention_7 == "TRUE")
+cr_all <- nrow(True_num_all)/nrow(Data)
+
+True_rate_control<- Data  %>% filter(retention_7 == "TRUE" & group == "Control")
+True_rate2<- Data  %>% filter( group == "Control")
+
+
+True_rate3_treatment<- Data  %>% filter(retention_7 == "TRUE" & group == "Treatment")
+True_rate4<- Data  %>% filter( group == "Treatment")
+
+
+cr_control <- nrow(True_rate_control)/nrow(True_rate2)
+cr_treatment <- nrow(True_rate3_treatment)/nrow(True_rate4)
+# output 
+
+cr_all
+cr_control
+cr_treatment
+
+
+# wanted to do a T test to see the diffrence 
+
+group_1 <- 
+  Data %>% 
+  filter(group == 'Control') %>% 
+  select(retention_7) %>% 
+  as.vector() %>% 
+  unlist()
+
+group_2 <- 
+  Data %>% 
+  filter(group == "Treatment") %>% 
+  select(retention_7) %>% 
+  unlist()
+
+
+t.test(group_1, group_2)
+tidy(t.test(group_1, group_2))
+
+
+# same i used his slides to obtaib this test 
+
+#linear regression 
+levels(Data$group)
+
+example_regression <- lm(retention_7 ~ group, data = Data)
+summary(example_regression)
+
+ tidy(example_regression)
+ 
+
+
+ # I then did the chai sqaure test for 2nd round validation 
+ 
+chisq.test(Data$group, Data$retention_7, correct=FALSE)
+
+
+
+
+```
